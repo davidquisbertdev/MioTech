@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+/* ---------- Tema femenino: fucsia ---------- */
+:root,
+[data-theme="fucsia"] {
+  --brand-50: #fff0f8;
+  --brand-100: #ffdff0;
+  --brand-200: #ffc0e1;
+  --brand-300: #ff93cb;
+  --brand-400: #f85aab;
+  --brand-500: #e91e8c;
+  --brand-600: #c8117a;
+  --brand-700: #a50d65;
+  --brand-800: #860f54;
+  --brand-900: #6c1046;
+  --bg: #fff7fb;
+  --surface: #ffffff;
+  --ink: #3b1230;
+  --muted: #8c6b82;
+  --line: #f5d5e6;
+  --side: #4a0f3a;
+  --side-ink: #ffd9ee;
+}
+
+/* ---------- Tema masculino: azul petróleo ---------- */
+[data-theme="azul"] {
+  --brand-50: #eef6f8;
+  --brand-100: #d6eaf0;
+  --brand-200: #aed4e0;
+  --brand-300: #7fb8cb;
+  --brand-400: #4b97b1;
+  --brand-500: #2a7a96;
+  --brand-600: #1f627b;
+  --brand-700: #1a4e63;
+  --brand-800: #173f50;
+  --brand-900: #12303d;
+  --bg: #f2f6f8;
+  --surface: #ffffff;
+  --ink: #0f2530;
+  --muted: #5b7380;
+  --line: #d5e1e7;
+  --side: #0f2a36;
+  --side-ink: #cfe6ee;
+}
+
+@theme inline {
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-side: var(--side);
+  --color-side-ink: var(--side-ink);
+}
+
+@layer base {
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--f-body), system-ui, sans-serif;
+  }
+  h1, h2, h3, .font-display {
+    font-family: var(--f-display), var(--f-body), system-ui, sans-serif;
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer;
+  }
+  .btn-primary { @apply bg-brand-600 text-white hover:bg-brand-700; }
+  .btn-soft { @apply bg-brand-100 text-brand-800 hover:bg-brand-200; }
+  .btn-ghost { @apply border border-line bg-surface text-ink hover:bg-brand-50; }
+  .btn-danger { @apply bg-red-600 text-white hover:bg-red-700; }
+  .input {
+    @apply w-full rounded-lg border border-line bg-surface px-3 py-2 text-sm text-ink placeholder:text-muted/70 focus:border-brand-500 focus:outline-2 focus:outline-brand-300;
+  }
+  .panel { @apply rounded-xl border border-line bg-surface; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
