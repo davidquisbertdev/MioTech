@@ -88,7 +88,7 @@ export default function OrderDetail() {
             {o.customers?.tiktok_username && <span className="text-muted"> · {o.customers.tiktok_username}</span>}
             {wa && <> · <a className="font-medium text-brand-700 hover:underline" href={wa} target="_blank" rel="noreferrer">WhatsApp {o.customers.phone}</a></>}
           </p>
-          {o.lives && <p className="text-xs text-muted">{o.lives.title || 'Live'} · {o.lives.live_date}</p>}
+          {o.lives && <p className="text-xs text-muted">{o.lives.title || 'Live'} · {fmtDateTime(o.lives.live_date)}</p>}
         </div>
         <div className="text-right">
           <p className="font-display text-3xl font-extrabold">{money(o.total)}</p>
