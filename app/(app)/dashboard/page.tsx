@@ -171,11 +171,13 @@ export default function Dashboard() {
 
         if (o.live_id) {
           const key = o.live_id
-          if (!byLive[key]) byLive[key] = { title: o.lives?.title || 'Live', total: 0 }
+          const live = Array.isArray(o.lives) ? o.lives[0] : o.lives
+          if (!byLive[key]) byLive[key] = { title: live?.title || 'Live', total: 0 }
           byLive[key].total += t
         }
 
-        const custKey = o.customers?.full_name ?? 'Sin cliente'
+        const cust = Array.isArray(o.customers) ? o.customers[0] : o.customers
+        const custKey = cust?.full_name ?? 'Sin cliente'
         if (!byCustomer[custKey]) byCustomer[custKey] = { name: custKey, total: 0 }
         byCustomer[custKey].total += t
       }
@@ -208,7 +210,8 @@ export default function Dashboard() {
 
       for (const o of orders) {
         const key = o.delivery_point_id ?? '__other__'
-        const name = o.delivery_points?.name || 'Otro'
+        const dp = Array.isArray(o.delivery_points) ? o.delivery_points[0] : o.delivery_points
+        const name = dp?.name || 'Otro'
         if (o.delivery_date === today) {
           if (!todayGrouped[key]) todayGrouped[key] = { name, orders: [] }
           todayGrouped[key].orders.push(o)
