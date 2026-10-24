@@ -156,10 +156,17 @@ export default function Dashboard() {
       const byCustomer: Record<string, { name: string; total: number }> = {}
       const monthlyDataMap: Record<number, number> = {}
 
+      // Helper para convertir UTC a fecha en Bolivia
+      const toBoliviaDate = (iso: string | null) => {
+        if (!iso) return ''
+        const d = new Date(iso)
+        return d.toLocaleDateString('en-CA', { timeZone: 'America/La_Paz' }) // formato YYYY-MM-DD
+      }
+
       for (const o of orders) {
-        const date = o.created_at?.slice(0, 10) ?? ''
+        const date = toBoliviaDate(o.created_at)
         const t = o.total ?? 0
-        const day = parseInt(date.slice(8, 10), 10)
+        const day = date ? parseInt(date.slice(8, 10), 10) : 0
 
         if (date === today) daily += t
         if (date >= weekStart) weekly += t

@@ -24,23 +24,30 @@ const pad = (n: number) => String(n).padStart(2, '0')
 
 export const todayISO = () => {
   const d = new Date()
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const inTZ = new Date(d.toLocaleString('en-US', { timeZone: TZ }))
+  return `${inTZ.getFullYear()}-${pad(inTZ.getMonth() + 1)}-${pad(inTZ.getDate())}`
 }
 
 export const weekStartISO = () => {
   const d = new Date()
-  const day = d.getDay()
-  const diff = d.getDate() - day + (day === 0 ? -6 : 1)
-  d.setDate(diff)
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const inTZ = new Date(d.toLocaleString('en-US', { timeZone: TZ }))
+  const day = inTZ.getDay()
+  const diff = inTZ.getDate() - day + (day === 0 ? -6 : 1)
+  inTZ.setDate(diff)
+  return `${inTZ.getFullYear()}-${pad(inTZ.getMonth() + 1)}-${pad(inTZ.getDate())}`
 }
 
-export const monthStartISO = () => todayISO().slice(0, 8) + '01'
+export const monthStartISO = () => {
+  const d = new Date()
+  const inTZ = new Date(d.toLocaleString('en-US', { timeZone: TZ }))
+  return `${inTZ.getFullYear()}-${pad(inTZ.getMonth() + 1)}-01`
+}
 
 export const tomorrowISO = () => {
   const d = new Date()
-  d.setDate(d.getDate() + 1)
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+  const inTZ = new Date(d.toLocaleString('en-US', { timeZone: TZ }))
+  inTZ.setDate(inTZ.getDate() + 1)
+  return `${inTZ.getFullYear()}-${pad(inTZ.getMonth() + 1)}-${pad(inTZ.getDate())}`
 }
 
 export const toLocalInput = (iso?: string | null) => {
@@ -51,3 +58,26 @@ export const toLocalInput = (iso?: string | null) => {
 
 export const whatsappLink = (phone?: string | null) =>
   phone ? `https://wa.me/591${phone.replace(/[^\d]/g, '')}` : undefined
+
+// === Funciones de fecha/hora centralizadas ===
+
+/** Fecha/hora actual en formato ISO UTC (para guardar en BD) */
+export const nowISO = () => new Date().toISOString()
+
+/** Fecha/hora actual en formato ISO con timezone de Bolivia */
+export const nowBoliviaISO = () => {
+  const d = new Date()
+  return d.toLocaleString('sv-SE', { timeZone: TZ }) // formato YYYY-MM-DD HH:mm:ss
+}
+
+/** Convierte un input datetime-local a ISO string UTC */
+export const fromLocalInput = (localValue: string) => {
+  if (!localValue) return null
+  return new Date(localValue).toISOString()
+}
+
+/** Obtiene la fecha actual en Bolivia como string YYYY-MM-DD */
+export const todayBoliviaString = () => {
+  const d = new Date()
+  return d.toLocaleDateString('en-CA', { timeZone: TZ })
+}
