@@ -18,6 +18,11 @@ export default function LoginPage() {
   const [err, setErr] = useState('')
   const [info, setInfo] = useState('')
 
+  // /login?modo=registro abre directamente el formulario de cuenta nueva (enlace de la landing).
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('modo') === 'registro') setMode('up')
+  }, [])
+
   useEffect(() => {
     if (!loading && session) router.replace('/dashboard')
   }, [loading, session, router])
@@ -36,7 +41,8 @@ export default function LoginPage() {
         password,
         options: { data: { full_name: name } },
       })
-      if (error) setErr(error.message)
+      // Mensaje genérico: no revelamos si un correo ya tiene cuenta.
+      if (error) setErr('No pudimos crear la cuenta. Revisa el correo y usa una contraseña de al menos 8 caracteres, o ingresa si ya tienes una.')
       else if (!data.session) setInfo('Te enviamos un correo para confirmar tu cuenta. Después de confirmarlo, ingresa aquí.')
     }
     setBusy(false)

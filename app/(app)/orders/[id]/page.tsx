@@ -31,11 +31,15 @@ export default function OrderDetail() {
   const [newItem, setNewItem] = useState({ description: '', quantity: 1, unit_price: '' })
   const [saving, setSaving] = useState(false)
 
+  const storeId = store?.id
   const load = useCallback(async () => {
+    if (!storeId) return
+    // Siempre acotado a la tienda activa: un id de otra tienda no se muestra ni se edita.
     const { data } = await supabase
       .from('orders')
       .select('*, customers(full_name, phone, tiktok_username, city), lives(title, live_date)')
       .eq('id', id)
+      .eq('store_id', storeId)
       .maybeSingle()
     if (!data) return setO(false)
     setO(data)
@@ -57,7 +61,7 @@ export default function OrderDetail() {
     ])
     setItems(i.data ?? [])
     setEvents(e.data ?? [])
-  }, [id])
+  }, [id, storeId])
 
   useEffect(() => { load() }, [load])
   useEffect(() => {
@@ -69,7 +73,8 @@ export default function OrderDetail() {
   async function patch(values: Record<string, any>) {
     setErr('')
     setSaving(true)
-    const { error } = await supabase.from('orders').update(values).eq('id', id)
+    if (!storeId) return setSaving(false)
+    const { error } = await supabase.from('orders').update(values).eq('id', id).eq('store_id', storeId)
     if (error) setErr(error.message)
     await load()
     setSaving(false)

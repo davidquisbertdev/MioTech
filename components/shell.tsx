@@ -5,6 +5,7 @@ import { useAuth } from '@/components/auth-provider'
 import { Logo, LogoMark } from '@/components/logo'
 import { ThemeToggle } from '@/components/theme-provider'
 import { Icon, type IconName } from '@/components/icons'
+import { daysLabel, membershipInfo } from '@/lib/membership'
 
 const NAV: { href: string; label: string; short: string; icon: IconName; admin?: boolean }[] = [
   { href: '/dashboard', label: 'Panel', short: 'Panel', icon: 'panel' },
@@ -20,6 +21,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const { store, memberships, setStoreId, fullName, session, isAdmin, signOut } = useAuth()
   const items = NAV.filter((n) => !n.admin || isAdmin)
   const isActive = (href: string) => path === href || path.startsWith(href + '/')
+  const { state, daysLeft } = membershipInfo(store)
 
   const storePicker = (dark: boolean) =>
     memberships.length > 1 ? (
@@ -66,6 +68,20 @@ export function Shell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
+        <Link
+          href="/settings"
+          aria-current={isActive('/settings') ? 'page' : undefined}
+          className={`mb-3 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors duration-150 ${
+            isActive('/settings') ? 'bg-white/12 text-white' : 'hover:bg-white/8 hover:text-white'
+          }`}
+        >
+          <Icon name="settings" className={isActive('/settings') ? 'text-brand-300' : 'opacity-80'} />
+          Configuración
+          {state === 'expiring' && daysLeft !== null && (
+            <span className="num ml-auto rounded-full bg-warn-soft px-2 py-0.5 text-xs font-bold text-warn">{daysLeft} d</span>
+          )}
+        </Link>
+
         <div className="space-y-3 border-t border-white/15 px-2 pt-4">
           <div>
             {storePicker(true)}
@@ -86,11 +102,22 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-line bg-surface px-4 py-2 md:hidden">
           <LogoMark size={30} />
           <div className="min-w-0 flex-1">{storePicker(false)}</div>
-          <ThemeToggle />
-          <button onClick={signOut} aria-label="Cerrar sesión" title="Cerrar sesión" className="grid h-9 w-9 cursor-pointer place-items-center rounded-lg text-muted hover:bg-sunken hover:text-ink">
-            <Icon name="logout" />
-          </button>
+          <Link
+            href="/settings"
+            aria-label="Configuración"
+            aria-current={isActive('/settings') ? 'page' : undefined}
+            className={`grid h-9 w-9 place-items-center rounded-lg hover:bg-sunken hover:text-ink ${isActive('/settings') ? 'bg-brand-100 text-brand-700' : 'text-muted'}`}
+          >
+            <Icon name="settings" />
+          </Link>
         </header>
+
+        {state === 'expiring' && daysLeft !== null && !isActive('/settings') && (
+          <Link href="/settings" className="flex items-center justify-center gap-2 bg-warn-soft px-4 py-2 text-center text-sm font-medium text-warn hover:underline">
+            Tu membresía vence en {daysLabel(daysLeft)}. Ver detalles
+            <Icon name="chevron" size={14} />
+          </Link>
+        )}
 
         <main className="mx-auto max-w-6xl px-4 pb-24 pt-5 sm:px-8 sm:pt-8 md:pb-12">{children}</main>
       </div>
