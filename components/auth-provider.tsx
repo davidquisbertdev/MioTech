@@ -22,7 +22,9 @@ export const useAuth = () => useContext(Ctx)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
-  const [loading, setLoading] = useState(true)
+  // authReady: ya sabemos si hay sesión. loadedFor: usuario cuyas tiendas ya se cargaron.
+  const [authReady, setAuthReady] = useState(false)
+  const [loadedFor, setLoadedFor] = useState<string | null>(null)
   const [memberships, setMemberships] = useState<Membership[]>([])
   const [fullName, setFullName] = useState('')
   const [storeId, setStoreIdState] = useState<string | null>(null)
@@ -32,13 +34,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStoreIdState(localStorage.getItem('mio.store'))
     supabase.auth.getSession().then(({ data }) => {
       setSession(data.session)
-      if (!data.session) setLoading(false)
+      setAuthReady(true)
     })
     const { data: sub } = supabase.auth.onAuthStateChange((_e, s) => {
       setSession(s)
+      setAuthReady(true)
       if (!s) {
         setMemberships([])
-        setLoading(false)
+        setFullName('')
+        setLoadedFor(null)
       }
     })
     return () => sub.subscription.unsubscribe()
@@ -54,12 +58,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setMemberships(list)
     const { data: p } = await supabase.from('profiles').select('full_name').eq('id', userId).maybeSingle()
     setFullName(p?.full_name ?? '')
-    setLoading(false)
+    setLoadedFor(userId)
   }, [userId])
 
   useEffect(() => {
     if (userId) refresh()
   }, [userId, refresh])
+
+  // Con sesión, seguimos "cargando" hasta tener las tiendas de ESE usuario. Sin esto,
+  // justo después de iniciar sesión se veía por un instante la pantalla de crear tienda.
+  const loading = !authReady || (!!userId && loadedFor !== userId)
 
   const current = memberships.find((m) => m.store_id === storeId) ?? memberships[0] ?? null
   const store = current?.stores ?? null
