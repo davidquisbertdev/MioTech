@@ -1,11 +1,15 @@
 'use client'
 import { useCallback, useEffect, useState } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
+import { useParams } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/components/auth-provider'
-import { Badge, Empty, ErrorMsg, Field } from '@/components/ui'
+import { Badge, Empty, ErrorMsg, Field, ListSkeleton } from '@/components/ui'
+import { Icon } from '@/components/icons'
 import { DELIVERY_LABEL, FIELD_LABEL, PAYMENT_LABEL, STATUS_LABEL, VALUE_LABEL } from '@/lib/labels'
 import { fmtDateTime, money, toLocalInput, whatsappLink } from '@/lib/format'
+
+const STEPS = ['to_prepare', 'prepared', 'dispatched', 'delivered']
 
 const NEXT: Record<string, { to: string; label: string } | undefined> = {
   to_prepare: { to: 'prepared', label: 'Marcar alistado' },
@@ -15,7 +19,6 @@ const NEXT: Record<string, { to: string; label: string } | undefined> = {
 
 export default function OrderDetail() {
   const { id } = useParams<{ id: string }>()
-  const router = useRouter()
   const { store, isAdmin } = useAuth()
   const [o, setO] = useState<any>(null)
   const [items, setItems] = useState<any[]>([])
@@ -26,6 +29,7 @@ export default function OrderDetail() {
   const [del, setDel] = useState<any>({})
   const [extra, setExtra] = useState({ notes: '', remind_at: '' })
   const [newItem, setNewItem] = useState({ description: '', quantity: 1, unit_price: '' })
+  const [saving, setSaving] = useState(false)
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -64,15 +68,25 @@ export default function OrderDetail() {
 
   async function patch(values: Record<string, any>) {
     setErr('')
+    setSaving(true)
     const { error } = await supabase.from('orders').update(values).eq('id', id)
     if (error) setErr(error.message)
     await load()
+    setSaving(false)
   }
 
   const nn = (v: string) => (v === '' ? null : v)
 
-  if (o === null) return <Empty>Cargando…</Empty>
-  if (o === false) return <Empty>No encontramos este pedido.</Empty>
+  if (o === null) return <div className="max-w-4xl"><ListSkeleton rows={6} /></div>
+  if (o === false) {
+    return (
+      <Empty title="No encontramos este pedido" action={<Link href="/orders" className="btn btn-ghost">Volver a pedidos</Link>}>
+        Puede que se haya eliminado o que pertenezca a otra tienda.
+      </Empty>
+    )
+  }
+
+  const stepIndex = STEPS.indexOf(o.status)
 
   const next = NEXT[o.status]
   const wa = whatsappLink(o.customers?.phone)
@@ -81,17 +95,20 @@ export default function OrderDetail() {
     <div className="max-w-4xl space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <button onClick={() => router.push('/orders')} className="mb-1 text-sm text-muted hover:underline">Volver a pedidos</button>
+          <Link href="/orders" className="mb-2 inline-flex items-center gap-1.5 text-sm font-medium text-muted hover:text-ink">
+            <Icon name="back" size={15} />
+            Pedidos
+          </Link>
           <h1 className="text-3xl font-extrabold">Pedido #{o.order_number}</h1>
           <p className="mt-1 text-sm">
             {o.customers?.full_name}
             {o.customers?.tiktok_username && <span className="text-muted"> · {o.customers.tiktok_username}</span>}
-            {wa && <> · <a className="font-medium text-brand-700 hover:underline" href={wa} target="_blank" rel="noreferrer">WhatsApp {o.customers.phone}</a></>}
+            {wa && <> · <a className="link inline-flex items-center gap-1 align-bottom" href={wa} target="_blank" rel="noreferrer"><Icon name="chat" size={14} />WhatsApp {o.customers.phone}</a></>}
           </p>
           {o.lives && <p className="text-xs text-muted">{o.lives.title || 'Live'} · {fmtDateTime(o.lives.live_date)}</p>}
         </div>
         <div className="text-right">
-          <p className="font-display text-3xl font-extrabold">{money(o.total)}</p>
+          <p className="num text-3xl font-bold tracking-tight">{money(o.total)}</p>
           <div className="mt-2 flex justify-end gap-2">
             <Badge value={o.payment_status} label={PAYMENT_LABEL[o.payment_status]} />
             <Badge value={o.status} label={STATUS_LABEL[o.status]} />
@@ -99,15 +116,37 @@ export default function OrderDetail() {
         </div>
       </header>
 
+      {o.status === 'cancelled' ? (
+        <p className="rounded-lg bg-sunken px-4 py-3 text-sm text-muted">Este pedido está cancelado. Puedes reabrirlo si fue un error.</p>
+      ) : (
+        <ol className="panel grid grid-cols-4 px-2 py-4 sm:px-4" aria-label="Avance del pedido">
+          {STEPS.map((s, i) => {
+            const done = i < stepIndex
+            const current = i === stepIndex
+            return (
+              <li key={s} className="relative flex flex-col items-center gap-1.5 text-center" aria-current={current ? 'step' : undefined}>
+                {i > 0 && <span className={`absolute right-1/2 top-3 h-0.5 w-full -translate-y-1/2 ${i <= stepIndex ? 'bg-brand-500' : 'bg-line'}`} aria-hidden="true" />}
+                <span className={`relative grid h-6 w-6 place-items-center rounded-full text-xs font-bold ${
+                  done ? 'bg-brand-600 text-white' : current ? 'bg-surface text-brand-700 ring-2 ring-brand-600' : 'bg-surface text-muted ring-1 ring-line'
+                }`}>
+                  {done ? <Icon name="check" size={13} /> : i + 1}
+                </span>
+                <span className={`text-xs ${current ? 'font-bold text-ink' : done ? 'font-medium text-ink' : 'text-muted'}`}>{STATUS_LABEL[s]}</span>
+              </li>
+            )
+          })}
+        </ol>
+      )}
+
       <div className="flex flex-wrap gap-2">
         {o.payment_status === 'pending' && o.status !== 'cancelled' && (
-          <button className="btn btn-primary" onClick={() => patch({ payment_status: 'paid' })}>Marcar pagado</button>
+          <button className="btn btn-primary" disabled={saving} onClick={() => patch({ payment_status: 'paid' })}>Marcar pagado</button>
         )}
-        {next && <button className="btn btn-soft" onClick={() => patch({ status: next.to })}>{next.label}</button>}
+        {next && <button className={`btn ${o.payment_status === 'pending' ? 'btn-soft' : 'btn-primary'}`} disabled={saving} onClick={() => patch({ status: next.to })}>{next.label}</button>}
         {o.status !== 'cancelled' && o.status !== 'delivered' && (
-          <button className="btn btn-ghost" onClick={() => confirm('¿Cancelar este pedido?') && patch({ status: 'cancelled' })}>Cancelar pedido</button>
+          <button className="btn btn-ghost" disabled={saving} onClick={() => confirm('¿Cancelar este pedido?') && patch({ status: 'cancelled' })}>Cancelar pedido</button>
         )}
-        {o.status === 'cancelled' && <button className="btn btn-ghost" onClick={() => patch({ status: 'to_prepare' })}>Reabrir pedido</button>}
+        {o.status === 'cancelled' && <button className="btn btn-ghost" disabled={saving} onClick={() => patch({ status: 'to_prepare' })}>Reabrir pedido</button>}
       </div>
       <ErrorMsg>{err}</ErrorMsg>
 
@@ -116,12 +155,12 @@ export default function OrderDetail() {
         <ul className="divide-y divide-line text-sm">
           {items.map((it) => (
             <li key={it.id} className="flex items-center justify-between gap-3 py-2">
-              <span>{it.quantity} × {it.description}</span>
+              <span><span className="num text-muted">{it.quantity} ×</span> {it.description}</span>
               <span className="flex items-center gap-3">
-                <span className="font-semibold">{money(it.subtotal)}</span>
+                <span className="num font-semibold">{money(it.subtotal)}</span>
                 {isAdmin && (
                   <button
-                    className="text-xs text-red-600 hover:underline"
+                    className="link-danger text-xs"
                     onClick={async () => { await supabase.from('order_items').delete().eq('id', it.id); load() }}
                   >Quitar</button>
                 )}
@@ -130,7 +169,7 @@ export default function OrderDetail() {
           ))}
         </ul>
         <form
-          className="mt-3 grid grid-cols-[1fr_70px_100px_auto] items-end gap-2"
+          className="mt-3 grid grid-cols-[1fr_1fr_auto] items-end gap-2 border-t border-line pt-3 sm:grid-cols-[1fr_80px_110px_auto]"
           onSubmit={async (e) => {
             e.preventDefault()
             if (!store || !newItem.description.trim()) return
@@ -143,7 +182,7 @@ export default function OrderDetail() {
             load()
           }}
         >
-          <input className="input" placeholder="Agregar producto" value={newItem.description} onChange={(e) => setNewItem({ ...newItem, description: e.target.value })} aria-label="Descripción" />
+          <input className="input col-span-3 sm:col-span-1" placeholder="Agregar producto" value={newItem.description} onChange={(e) => setNewItem({ ...newItem, description: e.target.value })} aria-label="Descripción" />
           <input className="input" type="number" min={1} value={newItem.quantity} onChange={(e) => setNewItem({ ...newItem, quantity: Number(e.target.value) })} aria-label="Cantidad" />
           <input className="input" type="number" min={0} step="0.01" placeholder="Precio" value={newItem.unit_price} onChange={(e) => setNewItem({ ...newItem, unit_price: e.target.value })} aria-label="Precio" />
           <button className="btn btn-soft">Agregar</button>
@@ -166,7 +205,7 @@ export default function OrderDetail() {
           </Field>
           <Field label="Método"><input className="input" value={pay.payment_method} onChange={(e) => setPay({ ...pay, payment_method: e.target.value })} placeholder="QR, transferencia, efectivo…" /></Field>
           <Field label="Referencia"><input className="input" value={pay.payment_reference} onChange={(e) => setPay({ ...pay, payment_reference: e.target.value })} /></Field>
-          <button className="btn btn-primary">Guardar pago</button>
+          <button className="btn btn-primary" disabled={saving}>Guardar pago</button>
         </form>
 
         <form
@@ -211,7 +250,7 @@ export default function OrderDetail() {
             <Field label="Hasta"><input className="input" type="time" value={del.delivery_time_to} onChange={(e) => setDel({ ...del, delivery_time_to: e.target.value })} /></Field>
           </div>
           <Field label="Notas de entrega"><input className="input" value={del.delivery_notes} onChange={(e) => setDel({ ...del, delivery_notes: e.target.value })} /></Field>
-          <button className="btn btn-primary">Guardar entrega</button>
+          <button className="btn btn-primary" disabled={saving}>Guardar entrega</button>
         </form>
       </div>
 
@@ -225,7 +264,7 @@ export default function OrderDetail() {
         <h2 className="text-lg font-bold">Notas y recordatorio</h2>
         <Field label="Notas"><textarea className="input" rows={2} value={extra.notes} onChange={(e) => setExtra({ ...extra, notes: e.target.value })} /></Field>
         <Field label="Recordarme el"><input className="input sm:max-w-xs" type="datetime-local" value={extra.remind_at} onChange={(e) => setExtra({ ...extra, remind_at: e.target.value })} /></Field>
-        <button className="btn btn-primary">Guardar</button>
+        <button className="btn btn-primary" disabled={saving}>Guardar notas</button>
       </form>
 
       <section className="panel p-5">
@@ -233,11 +272,11 @@ export default function OrderDetail() {
         {events.length === 0 ? (
           <p className="text-sm text-muted">Aún no hay cambios registrados.</p>
         ) : (
-          <ul className="space-y-1.5 text-sm">
+          <ul className="space-y-2 text-sm">
             {events.map((ev) => (
-              <li key={ev.id}>
-                <span className="text-muted">{fmtDateTime(ev.created_at)} · </span>
-                {FIELD_LABEL[ev.field] ?? ev.field}: {VALUE_LABEL[ev.field]?.[ev.old_value] ?? ev.old_value} → <strong>{VALUE_LABEL[ev.field]?.[ev.new_value] ?? ev.new_value}</strong>
+              <li key={ev.id} className="flex flex-wrap gap-x-3">
+                <span className="num w-32 shrink-0 text-muted">{fmtDateTime(ev.created_at)}</span>
+                <span>{FIELD_LABEL[ev.field] ?? ev.field}: {VALUE_LABEL[ev.field]?.[ev.old_value] ?? ev.old_value} → <strong>{VALUE_LABEL[ev.field]?.[ev.new_value] ?? ev.new_value}</strong></span>
               </li>
             ))}
           </ul>

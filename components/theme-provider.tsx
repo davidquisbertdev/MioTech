@@ -28,11 +28,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme()
   const opts: { id: Theme; label: string; color: string }[] = [
-    { id: 'fucsia', label: 'Tema fucsia', color: '#e91e8c' },
-    { id: 'azul', label: 'Tema azul', color: '#1f627b' },
+    { id: 'fucsia', label: 'Tema fucsia', color: '#e0218a' },
+    { id: 'azul', label: 'Tema azul', color: '#2a7a96' },
   ]
   return (
-    <div className="inline-flex items-center gap-1 rounded-full border border-line bg-surface p-1" role="group" aria-label="Color de la app">
+    <div className="inline-flex items-center gap-2.5 p-1" role="group" aria-label="Color de la app">
       {opts.map((o) => (
         <button
           key={o.id}
@@ -41,8 +41,8 @@ export function ThemeToggle() {
           aria-label={o.label}
           aria-pressed={theme === o.id}
           title={o.label}
-          className={`h-6 w-6 rounded-full transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 ${
-            theme === o.id ? 'ring-2 ring-offset-2 ring-ink/70' : 'opacity-70 hover:opacity-100'
+          className={`h-5 w-5 cursor-pointer rounded-full transition-opacity duration-150 ${
+            theme === o.id ? 'outline-2 outline-offset-2 outline-current' : 'opacity-60 hover:opacity-100'
           }`}
           style={{ background: o.color }}
         />

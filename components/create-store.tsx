@@ -37,9 +37,10 @@ export function CreateStore() {
         </Field>
         <ErrorMsg>{err}</ErrorMsg>
         <button className="btn btn-primary w-full" disabled={busy || !name.trim()}>Crear tienda</button>
-        <button type="button" className="w-full text-sm text-muted hover:underline" onClick={signOut}>
-          Si te creó el acceso una administradora, tu tienda aparecerá al ingresar de nuevo. Cerrar sesión
-        </button>
+        <p className="text-sm text-muted">
+          Si te creó el acceso una administradora, tu tienda aparecerá al ingresar de nuevo.{' '}
+          <button type="button" className="link" onClick={signOut}>Cerrar sesión</button>
+        </p>
       </form>
     </main>
   )

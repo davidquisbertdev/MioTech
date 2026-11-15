@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/components/auth-provider'
-import { Empty, ErrorMsg, Field, PageHeader } from '@/components/ui'
+import { Empty, ErrorMsg, Field, ListSkeleton, PageHeader } from '@/components/ui'
+import { Icon } from '@/components/icons'
 
 export default function DeliveryPointsPage() {
   const { store, isAdmin } = useAuth()
@@ -33,27 +34,29 @@ export default function DeliveryPointsPage() {
         <form onSubmit={add} className="panel mb-6 grid items-end gap-3 p-5 sm:grid-cols-[1fr_1.5fr_auto]">
           <Field label="Nombre"><input className="input" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Plaza 24 de Septiembre" /></Field>
           <Field label="Dirección o referencia"><input className="input" value={address} onChange={(e) => setAddress(e.target.value)} /></Field>
-          <button className="btn btn-primary">Agregar punto</button>
+          <button className="btn btn-primary"><Icon name="plus" size={16} />Agregar punto</button>
           <div className="sm:col-span-3"><ErrorMsg>{err}</ErrorMsg></div>
         </form>
       ) : (
         <p className="mb-4 text-sm text-muted">Solo un administrador puede agregar o cambiar puntos de entrega.</p>
       )}
 
-      {rows === null ? <Empty>Cargando…</Empty> : rows.length === 0 ? <Empty>No hay puntos de entrega todavía.</Empty> : (
+      {rows === null ? <ListSkeleton /> : rows.length === 0 ? (
+        <Empty icon="pin" title="No hay puntos de entrega todavía">Agrega los lugares donde sueles entregar para asignarlos a los pedidos y agrupar las entregas del día.</Empty>
+      ) : (
         <ul className="panel divide-y divide-line">
           {rows.map((p) => (
             <li key={p.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-              <div className={p.active ? '' : 'opacity-50'}>
-                <p className="font-semibold">{p.name}</p>
+              <div className={`min-w-0 ${p.active ? '' : 'opacity-60'}`}>
+                <p className="font-semibold">{p.name}{!p.active && <span className="ml-2 text-xs font-normal text-muted">Desactivado</span>}</p>
                 <p className="text-xs text-muted">{p.address || 'Sin dirección'}</p>
               </div>
               {isAdmin && (
                 <div className="flex gap-4 text-xs">
-                  <button className="text-brand-700 hover:underline" onClick={async () => { await supabase.from('delivery_points').update({ active: !p.active }).eq('id', p.id); load() }}>
+                  <button className="link" onClick={async () => { await supabase.from('delivery_points').update({ active: !p.active }).eq('id', p.id); load() }}>
                     {p.active ? 'Desactivar' : 'Activar'}
                   </button>
-                  <button className="text-red-600 hover:underline" onClick={async () => { if (confirm('¿Eliminar este punto?')) { await supabase.from('delivery_points').delete().eq('id', p.id); load() } }}>Eliminar</button>
+                  <button className="link-danger" onClick={async () => { if (confirm('¿Eliminar este punto?')) { await supabase.from('delivery_points').delete().eq('id', p.id); load() } }}>Eliminar</button>
                 </div>
               )}
             </li>

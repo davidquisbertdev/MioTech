@@ -81,3 +81,26 @@ export const todayBoliviaString = () => {
   const d = new Date()
   return d.toLocaleDateString('en-CA', { timeZone: TZ })
 }
+
+// === Utilidades para el panel de ventas ===
+
+/** Día (YYYY-MM-DD) en Bolivia de un instante ISO. Bolivia es UTC-4 todo el año. */
+export const boliviaDay = (iso: string) =>
+  new Date(new Date(iso).getTime() - 4 * 3600_000).toISOString().slice(0, 10)
+
+/** Suma o resta días a una fecha YYYY-MM-DD. */
+export const shiftISO = (iso: string, days: number) => {
+  const d = new Date(iso + 'T00:00:00Z')
+  d.setUTCDate(d.getUTCDate() + days)
+  return d.toISOString().slice(0, 10)
+}
+
+/** Formatea una fecha YYYY-MM-DD sin cambiarla de día por la zona horaria. */
+export const fmtDay = (iso: string, opts: Intl.DateTimeFormatOptions = { weekday: 'short', day: 'numeric', month: 'short' }) =>
+  new Date(iso + 'T00:00:00Z').toLocaleDateString('es-BO', { timeZone: 'UTC', ...opts })
+
+/** Monto compacto para ejes de gráficos: 850, 1,5 mil, 12 mil. */
+export const moneyShort = (n: number) =>
+  n >= 1000
+    ? `${(n / 1000).toLocaleString('es-BO', { maximumFractionDigits: 1 })} mil`
+    : n.toLocaleString('es-BO', { maximumFractionDigits: 0 })

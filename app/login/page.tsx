@@ -43,7 +43,7 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
+    <main className="grid min-h-dvh lg:grid-cols-[1.1fr_1fr]">
       <section className="relative hidden overflow-hidden bg-side p-12 text-side-ink lg:flex lg:flex-col lg:justify-between">
         <div className="text-white"><Logo size={44} /></div>
         <div>
@@ -83,7 +83,7 @@ export default function LoginPage() {
               <input className="input" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} autoComplete={mode === 'in' ? 'current-password' : 'new-password'} />
             </Field>
             <ErrorMsg>{err}</ErrorMsg>
-            {info && <p className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">{info}</p>}
+            {info && <p role="status" className="rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">{info}</p>}
             <button className="btn btn-primary w-full" disabled={busy}>
               {busy ? 'Un momento…' : mode === 'in' ? 'Ingresar' : 'Crear cuenta'}
             </button>
@@ -91,7 +91,7 @@ export default function LoginPage() {
 
           <button
             type="button"
-            className="mt-5 text-sm font-medium text-brand-700 hover:underline"
+            className="link mt-5 self-start text-sm"
             onClick={() => { setMode(mode === 'in' ? 'up' : 'in'); setErr(''); setInfo('') }}
           >
             {mode === 'in' ? '¿Aún no tienes cuenta? Crea una' : '¿Ya tienes cuenta? Ingresa'}

@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase, CREATE_EMPLOYEE_FN } from '@/lib/supabase'
 import { useAuth } from '@/components/auth-provider'
-import { Empty, ErrorMsg, Field, PageHeader } from '@/components/ui'
+import { Empty, ErrorMsg, Field, ListSkeleton, OkMsg, PageHeader } from '@/components/ui'
 import { ROLE_LABEL } from '@/lib/labels'
 
 const blank = { full_name: '', email: '', password: '', role: 'employee' }
@@ -52,7 +52,7 @@ export default function TeamPage() {
     load()
   }
 
-  if (!isAdmin) return <Empty>Solo los administradores pueden gestionar el equipo.</Empty>
+  if (!isAdmin) return <Empty icon="team" title="Sección para administradores">Solo los administradores pueden gestionar el equipo.</Empty>
 
   return (
     <>
@@ -69,24 +69,24 @@ export default function TeamPage() {
           </select>
         </Field>
         <div className="sm:col-span-2"><ErrorMsg>{err}</ErrorMsg></div>
-        {ok && <p className="rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-800 sm:col-span-2">{ok}</p>}
+        {ok && <div className="sm:col-span-2"><OkMsg>{ok}</OkMsg></div>}
         <div className="sm:col-span-2"><button className="btn btn-primary" disabled={busy}>{busy ? 'Creando…' : 'Crear usuario'}</button></div>
       </form>
 
-      {rows === null ? <Empty>Cargando…</Empty> : (
+      {rows === null ? <ListSkeleton rows={3} /> : (
         <ul className="panel divide-y divide-line">
           {rows.map((m) => (
             <li key={m.user_id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 text-sm">
-              <div className={m.active ? '' : 'opacity-50'}>
+              <div className={m.active ? '' : 'opacity-60'}>
                 <p className="font-semibold">{m.full_name || 'Sin nombre'}{m.user_id === session?.user.id && <span className="ml-2 text-xs text-muted">(tú)</span>}</p>
                 <p className="text-xs text-muted">{ROLE_LABEL[m.role]}{m.active ? '' : ' · desactivado'}</p>
               </div>
               {m.user_id !== session?.user.id && (
                 <div className="flex gap-4 text-xs">
-                  <button className="text-brand-700 hover:underline" onClick={() => update(m.user_id, { role: m.role === 'admin' ? 'employee' : 'admin' })}>
+                  <button className="link" onClick={() => update(m.user_id, { role: m.role === 'admin' ? 'employee' : 'admin' })}>
                     {m.role === 'admin' ? 'Pasar a empleado' : 'Hacer administrador'}
                   </button>
-                  <button className="text-red-600 hover:underline" onClick={() => update(m.user_id, { active: !m.active })}>
+                  <button className="link-danger" onClick={() => update(m.user_id, { active: !m.active })}>
                     {m.active ? 'Desactivar' : 'Reactivar'}
                   </button>
                 </div>

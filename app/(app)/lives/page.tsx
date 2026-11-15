@@ -2,7 +2,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/components/auth-provider'
-import { Empty, ErrorMsg, Field, PageHeader } from '@/components/ui'
+import { Empty, ErrorMsg, Field, ListSkeleton, PageHeader } from '@/components/ui'
+import { Icon } from '@/components/icons'
 import { fmtDateTime, todayISO } from '@/lib/format'
 
 export default function LivesPage() {
@@ -37,22 +38,24 @@ export default function LivesPage() {
       <form onSubmit={add} className="panel mb-6 grid items-end gap-3 p-5 sm:grid-cols-[1fr_220px_auto]">
         <Field label="Título (opcional)"><input className="input" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ej: Liquidación de verano" /></Field>
         <Field label="Fecha"><input className="input" type="datetime-local" required value={date} onChange={(e) => setDate(e.target.value)} /></Field>
-        <button className="btn btn-primary">Agregar live</button>
+        <button className="btn btn-primary"><Icon name="plus" size={16} />Agregar live</button>
         <div className="sm:col-span-3"><ErrorMsg>{err}</ErrorMsg></div>
       </form>
 
-      {rows === null ? <Empty>Cargando…</Empty> : rows.length === 0 ? <Empty>Todavía no registraste ningún live.</Empty> : (
+      {rows === null ? <ListSkeleton /> : rows.length === 0 ? (
+        <Empty icon="lives" title="Todavía no registraste ningún live">Agrega tu próxima transmisión arriba y elige ese live al anotar cada pedido.</Empty>
+      ) : (
         <ul className="panel divide-y divide-line">
           {rows.map((l) => (
             <li key={l.id} className="flex items-center justify-between gap-3 px-4 py-3 text-sm">
-              <div>
-                <p className="font-semibold">{l.title || 'Live sin título'}</p>
+              <div className="min-w-0">
+                <p className="truncate font-semibold">{l.title || 'Live sin título'}</p>
                 <p className="text-xs text-muted">{fmtDateTime(l.live_date)}</p>
               </div>
               <div className="flex items-center gap-4">
-                <span className="text-muted">{l.orders?.[0]?.count ?? 0} pedidos</span>
+                <span className="num text-muted">{(l.orders?.[0]?.count ?? 0) === 1 ? '1 pedido' : `${l.orders?.[0]?.count ?? 0} pedidos`}</span>
                 {isAdmin && (
-                  <button className="text-xs text-red-600 hover:underline" onClick={async () => { if (confirm('¿Eliminar este live? Los pedidos se conservan.')) { await supabase.from('lives').delete().eq('id', l.id); load() } }}>Eliminar</button>
+                  <button className="link-danger text-xs" onClick={async () => { if (confirm('¿Eliminar este live? Los pedidos se conservan.')) { await supabase.from('lives').delete().eq('id', l.id); load() } }}>Eliminar</button>
                 )}
               </div>
             </li>

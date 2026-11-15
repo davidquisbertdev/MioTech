@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/components/auth-provider'
 import { ErrorMsg, Field, PageHeader } from '@/components/ui'
+import { Icon } from '@/components/icons'
 import { money, todayISO } from '@/lib/format'
 
 type Item = { description: string; quantity: number | string; unit_price: number | string }
@@ -97,13 +98,13 @@ export default function NewOrder() {
   }
 
   return (
-    <form onSubmit={submit} className="max-w-3xl space-y-6">
+    <form onSubmit={submit} className="max-w-3xl space-y-5">
       <PageHeader title="Nuevo pedido" subtitle="Anótalo rápido mientras sigues en vivo." />
 
       <section className="panel space-y-4 p-5">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold">Cliente</h2>
-          <button type="button" className="text-sm font-medium text-brand-700 hover:underline" onClick={() => setNewCustomer(!newCustomer)}>
+          <button type="button" className="link text-sm" onClick={() => setNewCustomer(!newCustomer)}>
             {newCustomer ? 'Elegir uno existente' : 'Es un cliente nuevo'}
           </button>
         </div>
@@ -138,29 +139,29 @@ export default function NewOrder() {
       <section className="panel space-y-3 p-5">
         <h2 className="text-lg font-bold">Productos</h2>
         {items.map((it, i) => (
-          <div key={i} className="grid grid-cols-[1fr_70px_100px_auto] items-end gap-2">
-            <Field label={i === 0 ? 'Descripción' : ''}>
-              <input className="input" value={it.description} onChange={(e) => setItem(i, { description: e.target.value })} placeholder="Ej: Blusa floral talla M" />
+          <div key={i} className="grid grid-cols-[1fr_1fr_auto] items-end gap-2 sm:grid-cols-[1fr_80px_110px_auto]">
+            <Field label={i === 0 ? 'Descripción' : ''} className="col-span-3 sm:col-span-1">
+              <input className="input" value={it.description} onChange={(e) => setItem(i, { description: e.target.value })} placeholder="Ej: Blusa floral talla M" aria-label="Descripción del producto" />
             </Field>
             <Field label={i === 0 ? 'Cant.' : ''}>
-              <input className="input" type="number" min={1} value={it.quantity} onChange={(e) => setItem(i, { quantity: e.target.value })} />
+              <input className="input" type="number" inputMode="numeric" min={1} value={it.quantity} onChange={(e) => setItem(i, { quantity: e.target.value })} aria-label="Cantidad" />
             </Field>
             <Field label={i === 0 ? 'Precio' : ''}>
-              <input className="input" type="number" min={0} step="0.01" value={it.unit_price} onChange={(e) => setItem(i, { unit_price: e.target.value })} />
+              <input className="input" type="number" inputMode="decimal" min={0} step="0.01" placeholder="Bs" value={it.unit_price} onChange={(e) => setItem(i, { unit_price: e.target.value })} aria-label="Precio unitario" />
             </Field>
-            <button type="button" className="btn btn-ghost px-3" aria-label="Quitar producto" disabled={items.length === 1} onClick={() => setItems(items.filter((_, k) => k !== i))}>✕</button>
+            <button type="button" className="btn btn-ghost btn-icon" aria-label="Quitar producto" title="Quitar producto" disabled={items.length === 1} onClick={() => setItems(items.filter((_, k) => k !== i))}><Icon name="x" size={16} /></button>
           </div>
         ))}
-        <div className="flex items-center justify-between pt-1">
-          <button type="button" className="btn btn-soft" onClick={() => setItems([...items, { description: '', quantity: 1, unit_price: '' }])}>Agregar producto</button>
-          <p className="text-lg font-bold">Total {money(total)}</p>
-        </div>
+        <button type="button" className="btn btn-soft" onClick={() => setItems([...items, { description: '', quantity: 1, unit_price: '' }])}>
+          <Icon name="plus" size={16} />
+          Agregar producto
+        </button>
       </section>
 
       <section className="panel space-y-3 p-5">
         <h2 className="text-lg font-bold">Pago y notas</h2>
-        <label className="flex items-center gap-2 text-sm font-medium">
-          <input type="checkbox" checked={paid} onChange={(e) => setPaid(e.target.checked)} className="h-4 w-4 accent-brand-600" />
+        <label className="flex min-h-10 cursor-pointer items-center gap-2.5 text-sm font-medium">
+          <input type="checkbox" checked={paid} onChange={(e) => setPaid(e.target.checked)} className="h-5 w-5 accent-brand-600" />
           Ya pagó
         </label>
         {paid && (
@@ -174,7 +175,12 @@ export default function NewOrder() {
       </section>
 
       <ErrorMsg>{err}</ErrorMsg>
-      <button className="btn btn-primary" disabled={busy}>{busy ? 'Guardando…' : 'Guardar pedido'}</button>
+      <div className="panel sticky bottom-[4.5rem] z-10 flex items-center justify-between gap-4 px-4 py-3 shadow-[0_8px_24px_-8px_rgb(0_0_0/0.2)] md:bottom-4">
+        <p className="text-sm text-muted">
+          Total <span className="num ml-1 text-xl font-bold text-ink">{money(total)}</span>
+        </p>
+        <button className="btn btn-primary" disabled={busy}>{busy ? 'Guardando…' : 'Guardar pedido'}</button>
+      </div>
     </form>
   )
 }
