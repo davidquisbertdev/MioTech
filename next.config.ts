@@ -36,7 +36,13 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }]
+    // El panel privado y el acceso no deben aparecer en buscadores.
+    const noindex = [{ key: 'X-Robots-Tag', value: 'noindex, nofollow' }]
+    const privatePaths = ['dashboard', 'orders', 'customers', 'lives', 'delivery-points', 'team', 'settings', 'login']
+    return [
+      { source: '/:path*', headers: securityHeaders },
+      ...privatePaths.map((p) => ({ source: `/${p}/:path*`, headers: noindex })),
+    ]
   },
 }
 

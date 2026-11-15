@@ -18,6 +18,11 @@ export default function LoginPage() {
   const [err, setErr] = useState('')
   const [info, setInfo] = useState('')
 
+  // /login?modo=registro abre directamente el formulario de cuenta nueva (enlace de la landing).
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('modo') === 'registro') setMode('up')
+  }, [])
+
   useEffect(() => {
     if (!loading && session) router.replace('/dashboard')
   }, [loading, session, router])

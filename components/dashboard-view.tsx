@@ -1,5 +1,6 @@
 'use client'
 import Link from 'next/link'
+import { createContext, useContext } from 'react'
 import { ErrorMsg, OrderLink, PageHeader } from '@/components/ui'
 import { Icon, type IconName } from '@/components/icons'
 import { SalesChart } from '@/components/sales-chart'
@@ -13,6 +14,17 @@ export type Grouped = Record<string, { name: string; orders: Row[] }>
 export type Deliveries = { today: Grouped; tomorrow: Grouped }
 
 const one = (rel: any) => (Array.isArray(rel) ? rel[0] : rel)
+
+/** En la demo pública los pedidos no llevan a ninguna parte: son datos de ejemplo. */
+const DemoCtx = createContext(false)
+
+function RowLink({ href, className, children }: { href: string; className: string; children: React.ReactNode }) {
+  return useContext(DemoCtx) ? <div className={className}>{children}</div> : <Link href={href} className={className}>{children}</Link>
+}
+
+function OrderRef({ id, n }: { id: string; n: number }) {
+  return useContext(DemoCtx) ? <span className="num font-semibold text-brand-700">#{n}</span> : <OrderLink id={id} n={n} />
+}
 
 /* ---------- Piezas ---------- */
 
@@ -130,13 +142,13 @@ function Queue({ id, title, hint, icon, tone, rows, extra }: { id?: string; titl
         <ul className="max-h-72 divide-y divide-line overflow-y-auto">
           {rows.map((r) => (
             <li key={r.id}>
-              <Link href={`/orders/${r.id}`} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-4 py-2.5 text-sm transition-colors duration-150 hover:bg-brand-50">
+              <RowLink href={`/orders/${r.id}`} className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 px-4 py-2.5 text-sm transition-colors duration-150 hover:bg-brand-50">
                 <span className="min-w-40 flex-1 truncate">
                   <span className="num font-semibold text-brand-700">#{r.order_number}</span>
                   <span className="ml-2">{r.full_name ?? one(r.customers)?.full_name}</span>
                 </span>
                 <span className="num shrink-0 text-xs text-muted">{extra(r)}</span>
-              </Link>
+              </RowLink>
             </li>
           ))}
         </ul>
@@ -171,7 +183,7 @@ function DeliveryDay({ title, date, groups }: { title: string; date: string; gro
                 {g.orders.map((o) => (
                   <li key={o.id} className="flex items-center justify-between gap-3">
                     <span className="min-w-0 truncate">
-                      <OrderLink id={o.id} n={o.order_number} />
+                      <OrderRef id={o.id} n={o.order_number} />
                       <span className="ml-2">{one(o.customers)?.full_name}</span>
                     </span>
                     <span className="num shrink-0 text-xs text-muted">{money(o.total)}</span>
@@ -188,7 +200,8 @@ function DeliveryDay({ title, date, groups }: { title: string; date: string; gro
 
 /* ---------- Vista ---------- */
 
-export function DashboardView({ sales, queues, deliveries, period, onPeriod, err, today, tomorrow }: {
+export function DashboardView({ sales, queues, deliveries, period, onPeriod, err, today, tomorrow, demo = false }: {
+  demo?: boolean
   sales: SalesSummary | null
   queues: Queues | null
   deliveries: Deliveries | null
@@ -203,7 +216,7 @@ export function DashboardView({ sales, queues, deliveries, period, onPeriod, err
   const hasDeliveries = deliveries && (Object.keys(deliveries.today).length > 0 || Object.keys(deliveries.tomorrow).length > 0)
 
   return (
-    <>
+    <DemoCtx.Provider value={demo}>
       <PageHeader
         title="Panel"
         subtitle={
@@ -214,10 +227,12 @@ export function DashboardView({ sales, queues, deliveries, period, onPeriod, err
             : 'Cómo van tus ventas y qué necesita tu atención.'
         }
         action={
-          <Link href="/orders/new" className="btn btn-primary">
-            <Icon name="plus" size={16} />
-            Nuevo pedido
-          </Link>
+          demo ? undefined : (
+            <Link href="/orders/new" className="btn btn-primary">
+              <Icon name="plus" size={16} />
+              Nuevo pedido
+            </Link>
+          )
         }
       />
 
@@ -345,6 +360,6 @@ export function DashboardView({ sales, queues, deliveries, period, onPeriod, err
           />
         </div>
       </section>
-    </>
+    </DemoCtx.Provider>
   )
 }
